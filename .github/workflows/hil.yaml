@@ -12,7 +12,7 @@ env:
 jobs:
   hil-build-flash-test:
     name: Build, Flash & Test on Hardware
-    runs-on: [self-hosted, hil]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
