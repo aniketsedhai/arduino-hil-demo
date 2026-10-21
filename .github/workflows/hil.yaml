@@ -1,0 +1,43 @@
+name: Arduino HiL Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  FQBN: arduino:renesas_uno:unor4wifi
+  SERIAL_PORT: /dev/cu.usbmodemF412FA637BA02
+
+jobs:
+  hil-build-flash-test:
+    name: Build, Flash & Test on Hardware
+    runs-on: [self-hosted, hil]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect connected boards
+        run: arduino-cli board list
+
+      - name: Compile Firmware
+        run: |
+          mkdir -p build
+          arduino-cli compile --fqbn ${{ env.FQBN }} --output-dir ./build hil_sketch
+
+      - name: Upload Firmware Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arduino-firmware
+          path: build/*
+
+      - name: Flash Firmware to Arduino
+        run: |
+          arduino-cli upload -p ${{ env.SERIAL_PORT }} --fqbn ${{ env.FQBN }} --input-dir ./build
+          sleep 2
+
+      - name: Run Hardware-in-the-Loop (HiL) Serial Test
+        run: |
+          python3 test_hil.py ${{ env.SERIAL_PORT }}
+
